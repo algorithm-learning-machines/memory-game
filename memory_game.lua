@@ -33,7 +33,7 @@ function MemoryGame:__init(opt)
    self.score = 0
 end
 
-function MemoryGame:isFinal()
+function MemoryGame:isOver()
    return self.solved:sum() == self.size
 end
 
@@ -64,7 +64,6 @@ function MemoryGame:getAvailableActions()
 end
 
 function MemoryGame:applyAction(action)
-   print(action)
    self.lastAction = action
    first, second = getNumbers(action)
    assert(first > 0 and first <= self.size
@@ -75,7 +74,7 @@ function MemoryGame:applyAction(action)
       self.solved[second] = 1
       reward = 0.2
    end
-   -- if self:isFinal() then reward = 1.0 end
+   -- if self:isOver() then reward = 1.0 end
    self.lastReward = reward
    self.score = self.score + reward
    return self:serialize(first, second), reward
