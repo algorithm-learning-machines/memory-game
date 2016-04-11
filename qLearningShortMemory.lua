@@ -71,8 +71,10 @@ local sessionsNo = tonumber(opt.sessionsNo) or 10
 local evalEpisodesNo = tonumber(opt.evalEpisodesNo) or 200
 trainingScores = torch.Tensor(trainEpisodesNo * sessionsNo)
 evalScores = torch.Tensor(sessionsNo)
+statesNo = torch.Tensor(sessionsNo)
 
 local Q = {}
+local N = 0
 
 local comp = require 'pl.comprehension' . new()
 -- local latestMoves = {1:nil, 2:nil, 3:nil}
@@ -98,6 +100,7 @@ for s = 1, sessionsNo do
 
          if not Q[oldStates] then
             Q[oldStates] = {}
+            N = N + 1
          end
 
          -- Q[oldState][action] = Q[oldState][action] or 0
@@ -116,6 +119,7 @@ for s = 1, sessionsNo do
    end
 
    local totalScore = 0
+   statesNo[s] = N
 
    for e = 1, evalEpisodesNo do
       local game = MemoryGame(opt)
@@ -137,9 +141,15 @@ for s = 1, sessionsNo do
    print("Finished eval session")
    evalScores[s] = (totalScore / evalEpisodesNo)
 
+   gnuplot.figure(1)
    gnuplot.plot(
       {'Train', torch.linspace(1, s * trainEpisodesNo, s * trainEpisodesNo), trainingScores[{{1, s * trainEpisodesNo}}], "-"},
       {'Eval', torch.linspace(trainEpisodesNo, s * trainEpisodesNo, s), evalScores[{{1, s}}], "~"})
+   gnuplot.figure(2)
+   gnuplot.plot(
+      {'Eval', statesNo[{{1, s}}], "~"}
+      )
 
+   print(N)
    print ("Done")
 end
