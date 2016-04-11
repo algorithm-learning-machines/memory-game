@@ -16,8 +16,9 @@ function MemoryGame:__init(opt)
    opt = opt or {}
 
    self.width = opt.width or 4                           -- Configure board size
-   assert(self.width % 2, "Board width should be even!")
+   -- assert(self.width % 2, "Board width should be even!")
    self.size = self.width * self.width
+   self.maxSteps = (self.size * self.size + self.size) / 4.0
 
    self.hidden = torch.zeros(self.size):int()           -- These are the symbols
 
@@ -28,13 +29,32 @@ function MemoryGame:__init(opt)
 
    self.solved = torch.zeros(self.size):int()
 
+   if self.width % 2 == 1 then
+      self.solved[self.size] = 1
+   end
+
    self.lastAction = nil
    self.lastReward = nil
    self.score = 0
+   self.crtStep = 0
+
+   local pairsNo
+   if self.width % 2 == 0 then
+      pairsNo = math.sqrt(self.size)
+   else
+      pairsNo = math.sqrt(self.size - 1)
+   end
+
+   self.GUESS_REWARD = 1.0
+   self.WIN_REWARD = 0.0
+   self.ACTION_PENALTY = self.GUESS_REWARD * pairsNo / (self.maxSteps)
+   self.LOSE_REWARD = -10.0
+
+
 end
 
 function MemoryGame:isOver()
-   return self.solved:sum() == self.size
+   return (self.solved:sum() == self.size) or (self.crtStep >= self.maxSteps)
 end
 
 function MemoryGame:serialize(fst, snd)
@@ -64,17 +84,26 @@ function MemoryGame:getAvailableActions()
 end
 
 function MemoryGame:applyAction(action)
-   self.lastAction = action
-   first, second = getNumbers(action)
+   self.lastAction = action                                   -- remember action
+   local first, second = getNumbers(action)               -- parse action string
    assert(first > 0 and first <= self.size
              and second > 0 and second <= self.size)
-   reward = -0.01
+   self.crtStep = self.crtStep + 1
+
+   local reward = self.ACTION_PENALTY
+
    if self.hidden[first] == self.hidden[second] and self.solved[first] == 0 then
       self.solved[first] = 1
       self.solved[second] = 1
-      reward = 0.2
+      reward = reward + self.GUESS_REWARD
    end
-   -- if self:isOver() then reward = 1.0 end
+
+   if self.solved:sum() == self.size then
+      reward = reward + self.WIN_REWARD
+   elseif self.crtStep == self.maxSteps then
+      reward = reward + self.LOSE_REWARD
+   end
+
    self.lastReward = reward
    self.score = self.score + reward
    return self:serialize(first, second), reward
