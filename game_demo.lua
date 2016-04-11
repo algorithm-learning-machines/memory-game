@@ -16,7 +16,7 @@ opt = cmd:parse(arg)
 
 game = MemoryGame(opt)                                        -- initialize game
 
-while not game:isFinal() do                -- util game reaches the final state,
+while not game:isOver() do                -- util game reaches the final state,
    if opt.display then game:display(); sys.sleep(tonumber(opt.sleep)) end
    local actions = game:getAvailableActions()      -- get the available actions,
    local action_idx = math.random(#actions)               -- pick one at random,
