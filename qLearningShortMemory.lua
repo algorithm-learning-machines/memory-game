@@ -17,9 +17,9 @@ cmd:option("--epsLearning", 0.5, "Epsilon pentru greedy")
 cmd:option("--epsEvaluate", 0.01, "Epsilon pentru evalaure")
 cmd:option("--discout", 0.9, "Gama")
 cmd:option("--memory", 3, "Lastest moves")
-cmd:option("--trainEpisodes", 1000, "Number of training episodes")
+cmd:option("--trainEpisodes", 10000, "Number of training episodes")
 cmd:option("--evalEpisodes", 200, "Number of evaluating episodes")
-cmd:option("--sessions", 10, "Number of sessions")
+cmd:option("--sessions", 10000, "Number of sessions")
 cmd:option("--memorySize", 3, "Size of memory")
 
 opt = cmd:parse(arg)
@@ -70,9 +70,9 @@ function getBestQ(Q, state)
 end
 
 
-local trainEpisodesNo = tonumber(opt.trainEpisodes) or 1000   
-local sessionsNo = tonumber(opt.sessions) or 10
-local evalEpisodesNo = tonumber(opt.evalEpisodes) or 200
+local trainEpisodesNo = tonumber(opt.trainEpisodes) or 10000   
+local sessionsNo = tonumber(opt.sessions) or 1000000
+local evalEpisodesNo = tonumber(opt.evalEpisodes) or 100
 trainingScores = torch.Tensor(trainEpisodesNo * sessionsNo)
 evalScores = torch.Tensor(sessionsNo)
 statesNo = torch.Tensor(sessionsNo)
@@ -82,54 +82,46 @@ local N = 0
 
 local comp = require 'pl.comprehension' . new()
 
-local memorySize = opt.memorySize or 3
-local oldStates = torch.Tensor(memorySize)
--- local oldStates = comp '"" for y' (seq.copy(seq.range(1,rows)))
-
--- for i = 1, memorySize do
---    oldStates[i] = ""
--- end
+local memorySize = opt.memorySize or 1
+-- local oldStates = torch.Tensor(memorySize)
 
 
 local oldStates = comp 'table(y, "" for y)' (seq.copy(seq.range(1,memorySize)))
-print(oldStates)
 local crt_idx = 1
 
+print(sessionsNo)
 -- os.exit()
 
 for s = 1, sessionsNo do
    for e = 1, trainEpisodesNo do
       local game = MemoryGame(opt)
-      local oldState = "", actions, action
-      local state = game:serialize()
+      local state = ""
+      local oldState = ""
 
       while not game:isOver() do
-         -- oldStates = (oldState .. state)
-         memory = ""
-         for j = crt_idx, memorySize do
-            memory = (memory .. oldStates[j])
-         end
-         for j = 1, crt_idx - 1 do
-            -- print(j)
-            memory = (memory .. oldStates[j])
-         end
          oldState = state
-         -- if opt.display then game:display(); sys.sleep(tonumber(opt.sleep)) end
 
-         actionsAvailable = game:getAvailableActions()
+         memory = ""
+         for i = crt_idx, 1, -1 do
+            memory = (memory .. oldStates[i])
+         end
+         for i = memorySize, crt_idx + 1, -1 do
+            memory = (memory .. oldStates[i])
+         end
+
+         local actionsAvailable = game:getAvailableActions()
          action = selectAction(Q, memory, actionsAvailable, true)
 
          state, reward = game:applyAction(action)
 
-         newMemory = ""
-         for j = crt_idx + 1, memorySize do
-            newMemory = (newMemory .. oldStates[j])
+         
+         local newMemory = state
+         for i = crt_idx, 1, -1 do
+            newMemory = (newMemory .. oldStates[i])
          end
-            newMemory = (newMemory .. state)
-         for j = 1, crt_idx - 1 do
-            newMemory = (newMemory .. oldStates[j])
+         for i = memorySize, crt_idx + 2, -1 do
+            newMemory = (newMemory .. oldStates[i])
          end
-            newMemory = (newMemory .. state)
 
          q = getBestQ(Q, newMemory)
 
@@ -138,15 +130,14 @@ for s = 1, sessionsNo do
             N = N + 1
          end
 
-         crt_idx = (crt_idx + 1) % memorySize + 1
-         Q[crt_idx - 1] = state
-         -- Q[oldState][action] = Q[oldState][action] or 0
-         -- Q[oldState][action] = Q[oldState][action] + opt.learning_rate * 
-         --                (reward + opt.discout * q - Q[oldState][action])
          Q[memory][action] = Q[memory][action] or 0
          Q[memory][action] = Q[memory][action] + opt.learning_rate * 
                         (reward + opt.discout * q - Q[memory][action])
-         -- if opt.display then game:display(true); sys.sleep(tonumber(opt.sleep))
+
+         oldStates[crt_idx] = state
+         crt_idx = (crt_idx + 1) % memorySize
+
+          -- if opt.display then game:display(true); sys.sleep(tonumber(opt.sleep))
          -- end
       end
 
@@ -171,7 +162,7 @@ for s = 1, sessionsNo do
          if opt.display then game:display(true); sys.sleep(tonumber(opt.sleep)) end
       end
 
-      print("EvalScore:" .. game.score .. " " .. e)
+      print("EvalScore:" .. game.score .. " " .. e .. " " .. s)
       totalScore = totalScore + game.score
    end -- for e
 
@@ -188,5 +179,5 @@ for s = 1, sessionsNo do
       )
 
    print(N)
-   print ("Done")
+   print ("Done" .. s)
 end

@@ -14,7 +14,7 @@ cmd:option("--sleep", 0, "Sleep before each action")
 cmd:option("--display", false, "Display game")
 cmd:option("--learning_rate", 0.1, "Learning rate")
 cmd:option("--epsLearning", 0.5, "Epsilon pentru greedy")
-cmd:option("--epsEvaluate", 0.01, "Epsilon pentru evalaure")
+cmd:option("--epsEvaluate", 0.01, "Epsilon pentru evaluare")
 cmd:option("--discout", 0.9, "Gama")
 
 opt = cmd:parse(arg)
@@ -76,20 +76,20 @@ local Q = {}
 for s = 1, sessionsNo do
    for e = 1, trainEpisodesNo do
       local game = MemoryGame(opt)
-      local oldState, actions, action
+      local oldState, action, reward
       local state = game:serialize()
 
       while not game:isOver() do
          oldState = state
          -- if opt.display then game:display(); sys.sleep(tonumber(opt.sleep)) end
 
-         actionsAvailable = game:getAvailableActions()
+         local actionsAvailable = game:getAvailableActions()
          action = selectAction(Q, state, actionsAvailable, true)
 
 
          state, reward = game:applyAction(action)
 
-         q = getBestQ(Q, state)
+         local q = getBestQ(Q, state)
 
          if not Q[oldState] then
             Q[oldState] = {}
