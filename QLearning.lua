@@ -28,6 +28,10 @@ function QLearning:getIndex(n, m)
 end
 
 function QLearning:createMemory()
+   if self.memorySize == 0 then
+      return nil
+   end
+
    local memory = ""
 
    local ind = self:getIndex(self.idxCrt, self.memorySize)
@@ -36,10 +40,7 @@ function QLearning:createMemory()
       memory = (memory .. self.oldStates[i])
    end
 
-
    for i = self.memorySize, ind, -1 do
-      -- print(i)
-      -- print(self.oldStates)
       memory = (memory .. self.oldStates[i])
    end
 
@@ -47,23 +48,23 @@ function QLearning:createMemory()
 end
 
 
--- function QLearning:selectAction(actions, isTraining)
---    local state = self:createMemory()
---    if (not isTraining and math.random() >= self.epsEvaluate) or (math.random() >= self.epsLearning ) then
---       return self:bestAction(state, actions)
---    else
---       return actions[torch.random(#actions)]
---    end
--- end
-
-function QLearning:selectAction(actions, isTraining)
+function QLearning:selectAction(state, actions, isTraining)
    local state = self:createMemory()
-   if (math.random() >= self.epsEvaluate) or (math.random() >= self.epsLearning ) then
+   if (not isTraining and math.random() >= self.epsEvaluate) or (isTraining and  math.random() >= self.epsLearning ) then
       return self:bestAction(state, actions)
    else
       return actions[torch.random(#actions)]
    end
 end
+
+-- function QLearning:selectAction(actions, isTraining)
+--    local state = self:createMemory()
+--    if (math.random() >= self.epsEvaluate) or (math.random() >= self.epsLearning ) then
+--       return self:bestAction(state, actions)
+--    else
+--       return actions[torch.random(#actions)]
+--    end
+-- end
 
 
 function QLearning:bestAction(state, actions)
@@ -98,9 +99,9 @@ function QLearning:getBestQ(state)
    return bestQ
 end
 
-function QLearning:feedback(action, reward, nextState)
+function QLearning:feedback(state, action, reward, nextState)
    ind = self:getIndex(self.idxCrt, self.memorySize)
-   local memory = self:createMemory()
+   local memory = self:createMemory() or state
 
    local newMemory = nextState
    if self.memorySize >= 1 then
@@ -123,7 +124,9 @@ function QLearning:feedback(action, reward, nextState)
    self.Q[memory][action] = self.Q[memory][action] + self.learningRate * 
                   (reward + self.discount * q - self.Q[memory][action])
 
-   self.oldStates[ind] = nextState
+   if self.memorySize >= 1 then
+      self.oldStates[ind] = nextState
+   end
    self.idxCrt = self.idxCrt + 1
 end
 

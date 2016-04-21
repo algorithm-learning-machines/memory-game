@@ -7,7 +7,7 @@ local MemoryGame = class("MemoryGame")
 
 -- Static function that transforms a number to a printable symbol
 function MemoryGame.getSymbol(n)
-   assert(n > 0 and n < 27, "Out of range")
+   assert(n > 0 and n < 27, "Out of range" .. n)
    return string.char(n + 64)
 end
 
@@ -23,9 +23,23 @@ function MemoryGame:__init(opt)
 
    self.hidden = torch.zeros(self.size):int()           -- These are the symbols
 
-   local order = torch.randperm(self.size)
-   for idx = 1, self.size do
+   
+
+   local sizeUsed
+   if self.width % 2 == 1 then
+      sizeUsed = self.width * self.width - 1
+   else
+      sizeUsed = self.width * self.width
+   end
+
+   order = torch.randperm(sizeUsed)
+
+   for idx = 1, sizeUsed do
       self.hidden[order[idx]] = math.ceil(idx/2)
+   end
+
+   if self.width % 2 == 1 then
+      self.hidden[self.size] = math.ceil((self.size + 1) / 2)
    end
 
    self.solved = torch.zeros(self.size):int()
@@ -145,6 +159,7 @@ function MemoryGame:display(displayLastAction)
       print(fill)
       line = "|"
       for j = 1, self.width do
+         -- print(idx)
          if fst == idx or snd == idx then
             line = line .. ">" .. MemoryGame.getSymbol(self.hidden[idx]) .. "<|"
          elseif self.solved[idx] > 0.5 then

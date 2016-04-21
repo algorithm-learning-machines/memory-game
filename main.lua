@@ -12,7 +12,7 @@ cmd:option("--display", false, "Display game")
 
 cmd:option("--learning_rate", 0.1, "Learning rate")
 cmd:option("--epsLearning", 0.5, "Epsilon pentru greedy")
-cmd:option("--epsEvaluate", 0.01, "Epsilon pentru evalaure")
+cmd:option("--epsEvaluate", 0.1, "Epsilon pentru evalaure")
 cmd:option("--discout", 0.9, "Gama")
 cmd:option("--memorySize", 3, "Size of memory")
 
@@ -23,10 +23,8 @@ cmd:option("-evalEpisodes", 100, "Number of episodes to use for evaluation")
 
 
 cmd:option("--player", "random", "Who has to play?")
-cmd:option("--seed", 666, "Seed for the random number generator")
 
 opt = cmd:parse(arg)
-torch.manualSeed(opt.seed)
 
 local MemoryGame = require("memory_game")
 local player
@@ -58,12 +56,12 @@ for s = 1, evalSessionsNo do
         while not game:isOver() do
             oldState = state
 
-            local actionsAvailable = game:getAvailableActions()
+            actionsAvailable = game:getAvailableActions()
 
-            action = player:selectAction(actionsAvailable, true)
+            action = player:selectAction(state, actionsAvailable, true)
 
             state, reward = game:applyAction(action)
-            player:feedback(action, reward, state)
+            player:feedback(oldState, action, reward, state)
 
             if opt.display then game:display(true); sys.sleep(tonumber(opt.sleep))
             end
@@ -82,16 +80,18 @@ for s = 1, evalSessionsNo do
     for e = 1, evalEpisodesNo do
         local game = MemoryGame(opt)
         local state = game:serialize()
-        local reward
+        local reward, actionsAvailable
 
         while not game:isOver() do
-            local actionsAvailable = game:getAvailableActions()
-            action = player:selectAction(actionsAvailable, false)
+            if opt.display then game:display(false); sys.sleep(tonumber(opt.sleep))
+            end
+            actionsAvailable = game:getAvailableActions()
+            action = player:selectAction(state, actionsAvailable, false)
 
-            state, reward = game:applyAction(action)
+            state, _ = game:applyAction(action)
 
-            -- if opt.display then game:display(true); sys.sleep(tonumber(opt.sleep))
-            -- end
+            if opt.display then game:display(true); sys.sleep(tonumber(opt.sleep))
+            end
         end
         
         print("EvalScore:" .. game.score)
