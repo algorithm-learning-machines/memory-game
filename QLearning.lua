@@ -1,4 +1,5 @@
 require("torch")
+require("utils")
 
 local QLearning = {}
 QLearning.__index = QLearning
@@ -49,7 +50,6 @@ end
 
 
 function QLearning:selectAction(state, actions, isTraining)
-   local state = self:createMemory()
    if (not isTraining and math.random() >= self.epsEvaluate) or (isTraining and  math.random() >= self.epsLearning ) then
       return self:bestAction(state, actions)
    else
@@ -57,17 +57,22 @@ function QLearning:selectAction(state, actions, isTraining)
    end
 end
 
--- function QLearning:selectAction(actions, isTraining)
---    local state = self:createMemory()
---    if (math.random() >= self.epsEvaluate) or (math.random() >= self.epsLearning ) then
---       return self:bestAction(state, actions)
---    else
---       return actions[torch.random(#actions)]
---    end
--- end
-
-
 function QLearning:bestAction(state, actions)
+   if self.memorySize > 0 then
+      for i = 1, self.memorySize - 1 do
+            for l in string.gmatch(self.oldStates[i], "%a") do
+               local pos = string.find(self.oldStates[i], l)
+
+               for j = i + 1, self.memorySize do 
+                  pos2 = string.find(self.oldStates[j], l)
+                  if pos2 and pos ~= pos2 then
+                     return getString(pos, pos2)
+                  end
+               end
+            end
+      end
+   end
+
    local Qs = self.Q[state] or {}
    local bestAction
    local bestQ
@@ -101,28 +106,16 @@ end
 
 function QLearning:feedback(state, action, reward, nextState)
    ind = self:getIndex(self.idxCrt, self.memorySize)
-   local memory = self:createMemory() or state
+   local q = self:getBestQ(nextState)
 
-   local newMemory = nextState
-   if self.memorySize >= 1 then
-      for i = ind - 1, 1, -1 do
-         newMemory = (newMemory .. self.oldStates[i])
-      end
-      for i = self.memorySize, ind + 1, -1 do
-         newMemory = (newMemory .. self.oldStates[i])
-      end
-   end
-
-   local q = self:getBestQ(newMemory)
-
-   if not self.Q[memory] then
-      self.Q[memory] = {}
+   if not self.Q[state] then
+      self.Q[state] = {}
       self.statesNo = self.statesNo + 1
    end
 
-   self.Q[memory][action] = self.Q[memory][action] or 0
-   self.Q[memory][action] = self.Q[memory][action] + self.learningRate * 
-                  (reward + self.discount * q - self.Q[memory][action])
+   self.Q[state][action] = self.Q[state][action] or 0
+   self.Q[state][action] = self.Q[state][action] + self.learningRate * 
+                  (reward + self.discount * q - self.Q[state][action])
 
    if self.memorySize >= 1 then
       self.oldStates[ind] = nextState

@@ -19,7 +19,7 @@ cmd:option("--memorySize", 3, "Size of memory")
 
 cmd:option("--episodesNo", 100000, "Number of training episodes")
 cmd:option("--evalEvery", 200, "Eval the learning every n games")
-cmd:option("-evalEpisodes", 100, "Number of episodes to use for evaluation")
+cmd:option("-evalEpisodes", 10, "Number of episodes to use for evaluation")
 
 
 cmd:option("--player", "random", "Who has to play?")
@@ -50,15 +50,14 @@ for s = 1, evalSessionsNo do
     for e = 1, evalEvery do
         local game = MemoryGame(opt)
         local state = game:serialize()
-        local oldState = ""
-        local actionsAvailable
+        local oldState, actionsAvailable
 
         while not game:isOver() do
             oldState = state
 
             actionsAvailable = game:getAvailableActions()
 
-            action = player:selectAction(state, actionsAvailable, true)
+            action = player:selectAction(oldState, actionsAvailable, true)
 
             state, reward = game:applyAction(action)
             player:feedback(oldState, action, reward, state)
@@ -75,7 +74,9 @@ for s = 1, evalSessionsNo do
     end
 
     local totalScore = 0
-    if opt.player == "q_learning" then statesNo[s] = player.statesNo end
+    if opt.player == "q_learning" then
+        statesNo[s] = player.statesNo 
+    end
 
     for e = 1, evalEpisodesNo do
         local game = MemoryGame(opt)
