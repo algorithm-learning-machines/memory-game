@@ -1,15 +1,16 @@
 require("torch")
 require("utils")
+local tds = require("tds")
 
-local QPlayer = {}
-QPlayer.__index = QPlayer
+local class = require("class")
 
 local comp = require 'pl.comprehension' . new()
 
-function QPlayer.create(opt)
-   self = {}
-   setmetatable(self, QPlayer)
-   self.Q = {}
+local QPlayer = class("QPlayer")
+
+function QPlayer:__init(opt)
+   opt = opt or {}
+   self.Q = tds.Hash({})
 
    self.epsLearning = tonumber(opt.epsLearning) or 0.5
    self.epsEvaluate = tonumber(opt.epsEvaluate) or 0.1
@@ -17,11 +18,10 @@ function QPlayer.create(opt)
    self.discount = tonumber(opt.discount) or 0.99
    self.memorySize = tonumber(opt.memorySize) or 3
    self.idxCrt = 1
-   self.oldStates = comp 'table(y, "" for y)' (seq.copy(seq.range(1,self.memorySize)))
+   self.oldStates =
+   comp 'table(y, "" for y)' (seq.copy(seq.range(1,self.memorySize)))
 
    self.statesNo = 0
-
-   return self
 end
 
 function QPlayer:getIndex(n, m)
@@ -45,12 +45,13 @@ function QPlayer:createMemory()
       memory = (memory .. self.oldStates[i])
    end
 
-    return memory
+   return memory
 end
 
 
 function QPlayer:selectAction(state, actions, isTraining)
-   if (not isTraining and math.random() >= self.epsEvaluate) or (isTraining and  math.random() >= self.epsLearning ) then
+   if (not isTraining and math.random() >= self.epsEvaluate)
+   or (isTraining and math.random() >= self.epsLearning) then
       return self:bestAction(state, actions)
    else
       return actions[torch.random(#actions)]
@@ -60,16 +61,16 @@ end
 function QPlayer:bestAction(state, actions)
    if self.memorySize > 0 then
       for i = 1, self.memorySize - 1 do
-            for l in string.gmatch(self.oldStates[i], "%a") do
-               local pos = string.find(self.oldStates[i], l)
+         for l in string.gmatch(self.oldStates[i], "%a") do
+            local pos = string.find(self.oldStates[i], l)
 
-               for j = i + 1, self.memorySize do
-                  pos2 = string.find(self.oldStates[j], l)
-                  if pos2 and pos ~= pos2 then
-                     return getString(pos, pos2)
-                  end
+            for j = i + 1, self.memorySize do
+               pos2 = string.find(self.oldStates[j], l)
+               if pos2 and pos ~= pos2 then
+                  return getString(pos, pos2)
                end
             end
+         end
       end
    end
 
@@ -93,7 +94,7 @@ function QPlayer:bestAction(state, actions)
 end
 
 function QPlayer:getBestQ(state)
-   bestQ = 0
+   local bestQ = 0
 
    for a, q in pairs(self.Q[state] or {}) do
       if q > bestQ then
@@ -105,22 +106,28 @@ function QPlayer:getBestQ(state)
 end
 
 function QPlayer:feedback(state, action, reward, nextState)
-   ind = self:getIndex(self.idxCrt, self.memorySize)
+   local ind = self:getIndex(self.idxCrt, self.memorySize)
    local q = self:getBestQ(nextState)
 
    if not self.Q[state] then
-      self.Q[state] = {}
+      self.Q[state] = tds.Hash({})
       self.statesNo = self.statesNo + 1
    end
 
    self.Q[state][action] = self.Q[state][action] or 0
    self.Q[state][action] = self.Q[state][action] + self.learningRate *
-                  (reward + self.discount * q - self.Q[state][action])
+      (reward + self.discount * q - self.Q[state][action])
 
    if self.memorySize >= 1 then
       self.oldStates[ind] = nextState
    end
    self.idxCrt = self.idxCrt + 1
 end
+
+
+function QPlayer:getStatesNo()
+   return self.statesNo
+end
+
 
 return QPlayer

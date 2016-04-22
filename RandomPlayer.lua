@@ -1,21 +1,23 @@
 require("torch")
 
-local RandomPlayer = {}
-RandomPlayer.__index = RandomPlayer
+local class = require("class")
 
-function RandomPlayer.create()     
-    self = {}
-    setmetatable(self, RandomPlayer)
-    return self
+local RandomPlayer = class("RandomPlayer")
+
+function RandomPlayer:__init()
+   do end
 end
 
-function RandomPlayer:selectAction(actionsAvailable)
+function RandomPlayer:selectAction(_, actionsAvailable)
     return actionsAvailable[torch.random(#actionsAvailable)]
 end
 
-
 function RandomPlayer:feedback()
    do end
+end
+
+function RandomPlayer:getStatesNo()
+   return 0
 end
 
 return RandomPlayer
