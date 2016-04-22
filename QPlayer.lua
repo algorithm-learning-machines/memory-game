@@ -1,15 +1,15 @@
 require("torch")
 require("utils")
 
-local QLearning = {}
-QLearning.__index = QLearning
+local QPlayer = {}
+QPlayer.__index = QPlayer
 
 local comp = require 'pl.comprehension' . new()
 
-function QLearning.create(opt)     
+function QPlayer.create(opt)
    self = {}
-   setmetatable(self, QLearning)
-   self.Q = {}                    
+   setmetatable(self, QPlayer)
+   self.Q = {}
 
    self.epsLearning = tonumber(opt.epsLearning) or 0.5
    self.epsEvaluate = tonumber(opt.epsEvaluate) or 0.1
@@ -24,11 +24,11 @@ function QLearning.create(opt)
    return self
 end
 
-function QLearning:getIndex(n, m)
+function QPlayer:getIndex(n, m)
    return (n - 1) % m + 1
 end
 
-function QLearning:createMemory()
+function QPlayer:createMemory()
    if self.memorySize == 0 then
       return nil
    end
@@ -49,7 +49,7 @@ function QLearning:createMemory()
 end
 
 
-function QLearning:selectAction(state, actions, isTraining)
+function QPlayer:selectAction(state, actions, isTraining)
    if (not isTraining and math.random() >= self.epsEvaluate) or (isTraining and  math.random() >= self.epsLearning ) then
       return self:bestAction(state, actions)
    else
@@ -57,13 +57,13 @@ function QLearning:selectAction(state, actions, isTraining)
    end
 end
 
-function QLearning:bestAction(state, actions)
+function QPlayer:bestAction(state, actions)
    if self.memorySize > 0 then
       for i = 1, self.memorySize - 1 do
             for l in string.gmatch(self.oldStates[i], "%a") do
                local pos = string.find(self.oldStates[i], l)
 
-               for j = i + 1, self.memorySize do 
+               for j = i + 1, self.memorySize do
                   pos2 = string.find(self.oldStates[j], l)
                   if pos2 and pos ~= pos2 then
                      return getString(pos, pos2)
@@ -92,7 +92,7 @@ function QLearning:bestAction(state, actions)
 
 end
 
-function QLearning:getBestQ(state)
+function QPlayer:getBestQ(state)
    bestQ = 0
 
    for a, q in pairs(self.Q[state] or {}) do
@@ -104,7 +104,7 @@ function QLearning:getBestQ(state)
    return bestQ
 end
 
-function QLearning:feedback(state, action, reward, nextState)
+function QPlayer:feedback(state, action, reward, nextState)
    ind = self:getIndex(self.idxCrt, self.memorySize)
    local q = self:getBestQ(nextState)
 
@@ -114,7 +114,7 @@ function QLearning:feedback(state, action, reward, nextState)
    end
 
    self.Q[state][action] = self.Q[state][action] or 0
-   self.Q[state][action] = self.Q[state][action] + self.learningRate * 
+   self.Q[state][action] = self.Q[state][action] + self.learningRate *
                   (reward + self.discount * q - self.Q[state][action])
 
    if self.memorySize >= 1 then
@@ -123,4 +123,4 @@ function QLearning:feedback(state, action, reward, nextState)
    self.idxCrt = self.idxCrt + 1
 end
 
-return QLearning
+return QPlayer

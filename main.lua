@@ -32,7 +32,7 @@ local player
 if opt.player == "random" then
     Player = require("RandomPlayer")
 elseif opt.player == "q_learning" then
-    Player = require("QLearning")
+    Player = require("QPlayer")
 end
 
 local player = Player.create(opt)
@@ -75,7 +75,7 @@ for s = 1, evalSessionsNo do
 
     local totalScore = 0
     if opt.player == "q_learning" then
-        statesNo[s] = player.statesNo 
+        statesNo[s] = player.statesNo
     end
 
     for e = 1, evalEpisodesNo do
@@ -94,7 +94,7 @@ for s = 1, evalSessionsNo do
             if opt.display then game:display(true); sys.sleep(tonumber(opt.sleep))
             end
         end
-        
+
         print("EvalScore:" .. game.score)
         totalScore = totalScore + game.score
     end
