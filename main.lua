@@ -1,7 +1,8 @@
 require("torch")
 require("gnuplot")
+require("utils")
 
-cmd = torch.CmdLine()
+local cmd = torch.CmdLine()
 cmd:text()
 cmd:text("Playing a demo")
 cmd:text()
@@ -27,15 +28,15 @@ cmd:option("--memorySize", 3, "Size of memory")
 --------------------------------------------------------------------------------
 -- Learning hiper-parameters
 cmd:option("--learningRate", 0.1, "Learning rate")
-cmd:option("--epsLearning", 0.5, "Epsilon pentru greedy")
+cmd:option("--epsLearning", 0.05, "Epsilon pentru greedy")
 cmd:option("--epsEvaluate", 0, "Epsilon pentru evalaure")
 cmd:option("--discout", 0.9, "Gama")
 
 --------------------------------------------------------------------------------
 -- Training and evalutaion
 cmd:option("--episodesNo", 100000, "Number of training episodes")
-cmd:option("--evalEvery", 200, "Eval the learning every n games")
-cmd:option("--evalEpisodes", 10, "Number of episodes to use for evaluation")
+cmd:option("--evalEvery", 2000, "Eval the learning every n games")
+cmd:option("--evalEpisodes", 50, "Number of episodes to use for evaluation")
 
 --------------------------------------------------------------------------------
 -- Player to test
@@ -44,7 +45,7 @@ cmd:option("--player", "rand", "Who has to play? (Q/rand/not implemented)")
 
 --------------------------------------------------------------------------------
 -- Parse command line arguments
-opt = cmd:parse(arg)
+local opt = cmd:parse(arg)
 
 
 --------------------------------------------------------------------------------
@@ -59,6 +60,7 @@ end
 --------------------------------------------------------------------------------
 -- Instantiate player
 
+local Player
 if opt.player == "rand" then
    Player = require("RandomPlayer")
    opt.plotStates = false
@@ -76,9 +78,9 @@ local evalEvery = tonumber(opt.evalEvery)
 local evalEpisodesNo = tonumber(opt.evalEpisodes)
 local evalSessionsNo = torch.ceil(episodesNo / evalEvery)
 
-trainingScores = torch.Tensor(episodesNo)
-evalScores = torch.Tensor(evalSessionsNo)
-statesNo = torch.Tensor(evalSessionsNo)
+local trainingScores = torch.Tensor(episodesNo)
+local evalScores = torch.Tensor(evalSessionsNo)
+local statesNo = torch.Tensor(evalSessionsNo)
 
 for s = 1, evalSessionsNo do
    -----------------------------------------------------------------------------
@@ -86,7 +88,7 @@ for s = 1, evalSessionsNo do
    for e = 1, evalEvery do
       local game = MemoryGame(opt)
       local state = game:serialize()
-      local oldState, actionsAvailable
+      local oldState, actionsAvailable, action, reward
 
       while not game:isOver() do
          if opt.display then game:display(false); sleep(opt.sleep) end
@@ -98,7 +100,6 @@ for s = 1, evalSessionsNo do
          player:feedback(oldState, action, reward, state)
 
          if opt.display then game:display(true); sleep(opt.sleep) end
-
       end
 
       if opt.printScores then print("[T]Score:" .. game.score) end
@@ -113,16 +114,16 @@ for s = 1, evalSessionsNo do
    local totalScore = 0
    statesNo[s] = player:getStatesNo()
 
-   for e = 1, evalEpisodesNo do
+   for _ = 1, evalEpisodesNo do
       local game = MemoryGame(opt)
       local state = game:serialize()
-      local reward, actionsAvailable
+      local actionsAvailable, action
 
       while not game:isOver() do
          if opt.display then game:display(false); sleep(opt.sleep) end
 
          actionsAvailable = game:getAvailableActions()
-         action = player:selectAction(state, actionsAvailable, false)
+         action = player:selectAction(state, actionsAvailable, true) -- X
          state, _ = game:applyAction(action)
 
          if opt.display then game:display(true); sleep(opt.sleep) end
@@ -138,7 +139,7 @@ for s = 1, evalSessionsNo do
    -----------------------------------------------------------------------------
    -- Plot scores
    if opt.plotScores then
-      gnuplot.figure(1)
+      gnuplot.figure(1, {['noraise'] = true})
       local idx = s * evalEvery                                 -- current index
       gnuplot.plot(
          {'Train', torch.linspace(1, idx, idx), trainingScores[{{1,idx}}], "-"},
@@ -149,8 +150,10 @@ for s = 1, evalSessionsNo do
    -----------------------------------------------------------------------------
    -- Plot # of states
    if opt.plotStates then
-      gnuplot.figure(2)
+      gnuplot.figure(2, {['noraise'] = true})
       gnuplot.plot({'Eval', statesNo[{{1,s}}], "~"})
    end
 
+   -- gnuplot.raw("set term X11 1 noraise")
+   -- gnuplot.raw("set term X11 2 noraise")
 end

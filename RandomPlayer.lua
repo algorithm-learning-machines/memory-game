@@ -5,7 +5,7 @@ local class = require("class")
 local RandomPlayer = class("RandomPlayer")
 
 function RandomPlayer:__init()
-   do end
+   do return end
 end
 
 function RandomPlayer:selectAction(_, actionsAvailable)
@@ -13,7 +13,7 @@ function RandomPlayer:selectAction(_, actionsAvailable)
 end
 
 function RandomPlayer:feedback()
-   do end
+   do return end
 end
 
 function RandomPlayer:getStatesNo()

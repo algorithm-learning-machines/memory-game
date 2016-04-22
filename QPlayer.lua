@@ -1,9 +1,7 @@
 require("torch")
 require("utils")
 local tds = require("tds")
-
 local class = require("class")
-
 local comp = require 'pl.comprehension' . new()
 
 local QPlayer = class("QPlayer")
@@ -24,7 +22,7 @@ function QPlayer:__init(opt)
    self.statesNo = 0
 end
 
-function QPlayer:getIndex(n, m)
+function QPlayer.getIndex(n, m)
    return (n - 1) % m + 1
 end
 
@@ -35,7 +33,7 @@ function QPlayer:createMemory()
 
    local memory = ""
 
-   local ind = self:getIndex(self.idxCrt, self.memorySize)
+   local ind = self.getIndex(self.idxCrt, self.memorySize)
 
    for i = ind - 1, 1, -1 do
       memory = (memory .. self.oldStates[i])
@@ -65,7 +63,7 @@ function QPlayer:bestAction(state, actions)
             local pos = string.find(self.oldStates[i], l)
 
             for j = i + 1, self.memorySize do
-               pos2 = string.find(self.oldStates[j], l)
+               local pos2 = string.find(self.oldStates[j], l)
                if pos2 and pos ~= pos2 then
                   return getString(pos, pos2)
                end
@@ -96,7 +94,7 @@ end
 function QPlayer:getBestQ(state)
    local bestQ = 0
 
-   for a, q in pairs(self.Q[state] or {}) do
+   for _, q in pairs(self.Q[state] or {}) do
       if q > bestQ then
          bestQ = q
       end
@@ -106,7 +104,7 @@ function QPlayer:getBestQ(state)
 end
 
 function QPlayer:feedback(state, action, reward, nextState)
-   local ind = self:getIndex(self.idxCrt, self.memorySize)
+   local ind = self.getIndex(self.idxCrt, self.memorySize)
    local q = self:getBestQ(nextState)
 
    if not self.Q[state] then

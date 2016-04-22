@@ -8,3 +8,7 @@ function getNumbers(action)
    x, y = unpack(string.split(string.sub(action, 2, #action-1), ","))
    return tonumber(x), tonumber(y)
 end
+
+function sleep(x)
+   sys.sleep(tonumber(x))
+end
