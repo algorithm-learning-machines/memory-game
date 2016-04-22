@@ -18,12 +18,8 @@ function MemoryGame:__init(opt)
    self.width = opt.width or 4                           -- Configure board size
    -- assert(self.width % 2, "Board width should be even!")
    self.size = self.width * self.width
-   -- self.maxSteps = self.size
-   self.maxSteps = 1000000
 
    self.hidden = torch.zeros(self.size):int()           -- These are the symbols
-
-   
 
    local sizeUsed
    if self.width % 2 == 1 then
@@ -80,7 +76,7 @@ function MemoryGame:__init(opt)
    self.ACTION_PENALTY = - 1.0 / (pairsNo * pairsNo)
    self.LOSE_REWARD = 0
 
-
+   self.maxSteps = 8 * pairsNo * pairsNo
 
 end
 
