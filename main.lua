@@ -40,7 +40,7 @@ cmd:option("--evalEpisodes", 50, "Number of episodes to use for evaluation")
 
 --------------------------------------------------------------------------------
 -- Player to test
-cmd:option("--player", "rand", "Who has to play? (Q/rand/not implemented)")
+cmd:option("--player", "rand", "Who has to play? (Q/rand/batman)")
 
 
 --------------------------------------------------------------------------------
@@ -66,6 +66,8 @@ if opt.player == "rand" then
    opt.plotStates = false
 elseif opt.player == "Q" then
    Player = require("QPlayer")
+elseif opt.player == "batman" then
+   Player = require("Batman")
 end
 
 local player = Player(opt)
