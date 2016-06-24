@@ -50,7 +50,6 @@ local opt = cmd:parse(arg)
 
 f = io.open(opt.file, "r")
 if f ~= nil then
-   print("deschide usa crestine")
    dates = torch.load(opt.file)
    dates["idx"] = dates["idx"] + 1
 else
@@ -81,16 +80,13 @@ elseif opt.player == "Q" then
 elseif opt.player == "batman" then
    Player = require("Batman")
 elseif opt.player == "DeepQ" then
-   print("tralala urmeaza dqn")
    Player = require("DeepQPlayer")
-   print("tralala dupa")
 end
 
 -- opt.actionsNo = 5
 
 local player = Player(opt)
 print("playerul asta e ca BOICEA")
-print(player)
 
 --------------------------------------------------------------------------------
 -- Train and evaluate
@@ -143,7 +139,7 @@ for s = 1, evalSessionsNo do
       local state = game:serialize()
       local actionsAvailable, action
 
-      print("n r de act", #game:getAvailableActions())
+      -- print("n r de act", #game:getAvailableActions())
 
       while not game:isOver() do
          if opt.display then game:display(false); sleep(opt.sleep) end
