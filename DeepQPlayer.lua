@@ -7,7 +7,6 @@ local DeepQPlayer = class("DeepQPlayer")
 
 function DeepQPlayer:__init(opt)
    opt = opt or {}
-   self = {}
 
    self.Q1 = nn.Sequential()
 
