@@ -29,7 +29,7 @@ function DeepQPlayer:__init(opt)
    self.epsEvaluate = tonumber(opt.epsEvaluate) or 0.1
    self.learningRate = tonumber(opt.learningRate) or 0.1
    self.discount = tonumber(opt.discount) or 0.99
-   self.width = tonumber(opt.width) or 4
+   self.gameWidth = tonumber(opt.width) or 4
 
    self.statesNo = 0
 
@@ -40,28 +40,77 @@ function DeepQPlayer:__init(opt)
    self.crtIdx = 1
    self.crtPartition = 1
 
+   if self.gameWidth % 2 == 0 then 
+      self.gameSize = self.gameWidth * self.gameWidth
+   else
+      self.gameSize = self.gameWidth * self.gameWidth - 1
+   end
+   self.stateDim = self.gameSize / 2 + 2
+   
+
    for i = 1, self.partitionsNo do
       table.insert(
          self.experiences,
          {
             states = torch.Tensor(self.partitionSize, 1,
-                                 self.width, self.width),
+                                 self.gameSize, self.stateDim),
             actions = torch.LongTensor(self.partitionSize),
             rewards = torch.Tensor(self.partitionSize),
             nextStates = torch.Tensor(self.partitionSize, 1,
-                                      self.width, self.width),
+                                      self.gameSize, self.stateDim),
          }
       )
    end
 
    self.w, self.dw = self.Q1:getParameters()
-   -- self.
+end
+
+function DeepQPlayer:resizeState(state)
+   -- state is a string with " " and letters 
+
+   -- indexes = matrix with indexes of symbols
+   local indexes = torch.Tensor(self.gameSize):fill(0)
+   for i=1,#state do
+      if state:sub(i,i) ~= " " then
+         if #state%2 == 0 or (#state%2 == 1 and i ~= #state) then
+            indexes[i] = state:sub(i,i)
+         end
+
+      end
+   end
+
+   local newState = torch.Tensor(self.gameSize, self.stateDim)
+
+   for i=1,self.gameSize do
+      newState[i]:fill(0)
+
+      if indexes[i] ~= 0 then
+         ok = false
+         for j=1,self.gameSize do
+            if j ~= i then
+               if str:sub(j,j) == indexes[i] then
+                  newState[i][2] = 1
+                  ok = true
+                  break
+               end
+            end
+         end
+
+         if not ok then
+            newState[i][2+string.byte(indexes[i])-64] = 1
+         end
+      else 
+         newState[i][1] = 1
+      end
+   end
+
+   return newState
 end
 
 function DeepQPlayer:selectAction(state, actionsAvailable, isTraining)
    if (not isTraining and math.random() >= self.epsEvaluate)
    or (isTraining and math.random() >= self.epsLearning) then
-      local _, bestAction = torch.max(self.Q1:forward(state)) --o functie aici
+      local _, bestAction = torch.max(self.Q1:forward(self:resizeState(state))) --o functie aici
       return bestAction[1]
    else
       return actions[torch.random(#actionsAvailable)]
