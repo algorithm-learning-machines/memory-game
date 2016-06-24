@@ -8,7 +8,7 @@ function RandomPlayer:__init()
    do return end
 end
 
-function RandomPlayer:selectAction(_, actionsAvailable)
+function RandomPlayer:selectAction(_, actionsAvailable, _)
     return actionsAvailable[torch.random(#actionsAvailable)]
 end
 

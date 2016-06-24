@@ -17,19 +17,19 @@ cmd:option("--width", 4, "Size of game")
 -- Game tracking
 cmd:option("--sleep", 0, "Sleep before each action")
 cmd:option("--display", false, "Display game")
-cmd:option("--plotStates", true, "Plot evolution of states no")
-cmd:option("--plotScores", true, "Plot evolution of states no")
-cmd:option("--printScores", false, "Plot evolution of states no")
+cmd:option("--plotStates", false, "Plot evolution of states no")
+cmd:option("--plotScores", false, "Plot evolution of scores no")
+cmd:option("--printScores", false, "Print the scores")
 
 --------------------------------------------------------------------------------
 -- Learning constraints
-cmd:option("--memorySize", 3, "Size of memory")
+cmd:option("--memorySize", 0, "Size of memory")
 
 --------------------------------------------------------------------------------
 -- Learning hiper-parameters
 cmd:option("--learningRate", 0.1, "Learning rate")
 cmd:option("--epsLearning", 0.05, "Epsilon pentru greedy")
-cmd:option("--epsEvaluate", 0, "Epsilon pentru evalaure")
+cmd:option("--epsEvaluate", 0.1, "Epsilon pentru evalaure")
 cmd:option("--discout", 0.9, "Gama")
 
 --------------------------------------------------------------------------------
@@ -40,13 +40,25 @@ cmd:option("--evalEpisodes", 50, "Number of episodes to use for evaluation")
 
 --------------------------------------------------------------------------------
 -- Player to test
-cmd:option("--player", "rand", "Who has to play? (Q/rand/batman)")
+cmd:option("--player", "rand", "Who has to play? (Q/rand/batman/DeepQ)")
 
-
+cmd:option("--file", "dates.out", "Where to load the dates")
 --------------------------------------------------------------------------------
 -- Parse command line arguments
 local opt = cmd:parse(arg)
 
+
+f = io.open(opt.file, "r")
+if f ~= nil then
+   print("deschide usa crestine")
+   dates = torch.load(opt.file)
+   dates["idx"] = dates["idx"] + 1
+else
+   dates = {}
+   dates["idx"] = 1
+end
+local idxFile = dates["idx"]
+-- print (dates)
 
 --------------------------------------------------------------------------------
 -- Instantiate game
@@ -68,9 +80,17 @@ elseif opt.player == "Q" then
    Player = require("QPlayer")
 elseif opt.player == "batman" then
    Player = require("Batman")
+elseif opt.player == "DeepQ" then
+   print("tralala urmeaza dqn")
+   Player = require("DeepQPlayer")
+   print("tralala dupa")
 end
 
+-- opt.actionsNo = 5
+
 local player = Player(opt)
+print("playerul asta e ca BOICEA")
+print(player)
 
 --------------------------------------------------------------------------------
 -- Train and evaluate
@@ -83,6 +103,8 @@ local evalSessionsNo = torch.ceil(episodesNo / evalEvery)
 local trainingScores = torch.Tensor(episodesNo)
 local evalScores = torch.Tensor(evalSessionsNo)
 local statesNo = torch.Tensor(evalSessionsNo)
+
+sum = 0
 
 for s = 1, evalSessionsNo do
    -----------------------------------------------------------------------------
@@ -121,6 +143,8 @@ for s = 1, evalSessionsNo do
       local state = game:serialize()
       local actionsAvailable, action
 
+      print("n r de act", #game:getAvailableActions())
+
       while not game:isOver() do
          if opt.display then game:display(false); sleep(opt.sleep) end
 
@@ -137,6 +161,8 @@ for s = 1, evalSessionsNo do
    end
 
    evalScores[s] = (totalScore / evalEpisodesNo)
+
+   sum = sum + evalScores[s]
 
    -----------------------------------------------------------------------------
    -- Plot scores
@@ -159,3 +185,17 @@ for s = 1, evalSessionsNo do
    -- gnuplot.raw("set term X11 1 noraise")
    -- gnuplot.raw("set term X11 2 noraise")
 end
+
+print(sum)
+local memorySize = opt.memorySize or 0
+local tScores = idxFile .. "_" .. opt.player .. "_" .. episodesNo .. "_"
+-- local tScores = "_" .. opt.player .. "_" .. episodesNo .. "_" evalEvery
+tScores = tScores .. evalEvery .. "_" .. evalEpisodesNo .. "_" .. memorySize
+local eScores = tScores
+tScores = tScores .. "_trainingScores"
+eScores = eScores .. "_evalScores"
+
+dates[tScores] = {trainingScores, sum}
+dates[eScores] = {evalScores, sum}
+
+torch.save("dates.out", dates)

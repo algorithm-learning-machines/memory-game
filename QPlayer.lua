@@ -52,7 +52,7 @@ function QPlayer:selectAction(state, actions, isTraining)
    or (isTraining and math.random() >= self.epsLearning) then
       return self:bestAction(state, actions)
    else
-      return actions[torch.random(#actions)]
+      return actions[torch.random(#actions)], 0
    end
 end
 
