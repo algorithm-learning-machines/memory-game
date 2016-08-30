@@ -102,6 +102,8 @@ local statesNo = torch.Tensor(evalSessionsNo)
 
 sum = 0
 
+print("lala")
+
 for s = 1, evalSessionsNo do
    -----------------------------------------------------------------------------
    -- Train
@@ -109,6 +111,9 @@ for s = 1, evalSessionsNo do
       local game = MemoryGame(opt)
       local state = game:serialize()
       local oldState, actionsAvailable, action, reward
+
+      -- print(state)
+      -- print(game)
 
       while not game:isOver() do
          if opt.display then game:display(false); sleep(opt.sleep) end

@@ -79,58 +79,6 @@ function MemoryGame:isOver()
    return (self.solved:sum() == self.size) or (self.crtStep >= self.maxSteps)
 end
 
-function MemoryGame:serialize(fst, snd)
-   local state = ""
-   for i = 1, self.size do
-      if self.solved[i] > 0.5 or fst == i or snd == i then
-         state = state .. MemoryGame.getSymbol(self.hidden[i])
-      else
-         state = state .. " "
-      end
-   end
-   return state
-end
-
-function MemoryGame:getAvailableActions()
-   local actions = {}
-   for first = 1, self.size do
-      if self.solved[first] < 0.5 then
-         for second = first + 1, self.size do
-            if self.solved[second] < 0.5 then
-               actions[#actions + 1] = getString(first, second)
-            end
-         end
-      end
-   end
-   return actions
-end
-
-function MemoryGame:applyAction(action)
-   self.lastAction = action                                   -- remember action
-   local first, second = getNumbers(action)               -- parse action string
-   assert(first > 0 and first <= self.size
-             and second > 0 and second <= self.size)
-   self.crtStep = self.crtStep + 1
-
-   local reward = self.ACTION_PENALTY
-
-   if self.hidden[first] == self.hidden[second] and self.solved[first] == 0 then
-      self.solved[first] = 1
-      self.solved[second] = 1
-      reward = reward + self.GUESS_REWARD
-   end
-
-   if self.solved:sum() == self.size then
-      reward = reward + self.WIN_REWARD
-   elseif self.crtStep == self.maxSteps then
-      reward = reward + self.LOSE_REWARD
-   end
-
-   self.lastReward = reward
-   self.score = self.score + reward
-   return self:serialize(first, second), reward
-end
-
 function MemoryGame:display(displayLastAction)
    local fst, snd, line, border, fill
    print("")
@@ -168,5 +116,97 @@ function MemoryGame:display(displayLastAction)
    print(string.format("TOTAL SCORE: %2.4f", self.score))
    print("")
 end
+
+function MemoryGame:serialize(fst, snd)
+   local state = ""
+   for i = 1, self.size do
+      if self.solved[i] > 0.5 or fst == i or snd == i then
+         state = state .. MemoryGame.getSymbol(self.hidden[i])
+      else
+         state = state .. " "
+      end
+   end
+   self.display(state)
+   return state
+end
+
+function MemoryGame:getAvailableActions()
+   local actions = {}
+   for first = 1, self.size do
+      if self.solved[first] < 0.5 then
+         for second = first + 1, self.size do
+            if self.solved[second] < 0.5 then
+               actions[#actions + 1] = getString(first, second)
+            end
+         end
+      end
+   end
+
+   return actions
+end
+
+function MemoryGame:applyAction(action)
+   self.lastAction = action                                   -- remember action
+   local first, second = getNumbers(action)               -- parse action string
+   assert(first > 0 and first <= self.size
+             and second > 0 and second <= self.size)
+   self.crtStep = self.crtStep + 1
+
+   local reward = self.ACTION_PENALTY
+
+   if self.hidden[first] == self.hidden[second] and self.solved[first] == 0 then
+      self.solved[first] = 1
+      self.solved[second] = 1
+      reward = reward + self.GUESS_REWARD
+   end
+
+   if self.solved:sum() == self.size then
+      reward = reward + self.WIN_REWARD
+   elseif self.crtStep == self.maxSteps then
+      reward = reward + self.LOSE_REWARD
+   end
+
+   self.lastReward = reward
+   self.score = self.score + reward
+   return self:serialize(first, second), reward
+end
+
+-- function MemoryGame:display(displayLastAction)
+--    local fst, snd, line, border, fill
+--    print("")
+--    if self.lastAction and displayLastAction then
+--       fst, snd = getNumbers(self.lastAction)
+--    end
+--    border = "+"
+--    fill = "|"
+--    for i = 1, self.width do
+--       border = border .. "---+"
+--       fill = fill .. "   |"
+--    end
+--    print(border)
+
+--    local idx = 1
+--    for i = 1, self.width do
+--       print(fill)
+--       line = "|"
+--       for j = 1, self.width do
+--          -- print(idx)
+--          if fst == idx or snd == idx then
+--             line = line .. ">" .. MemoryGame.getSymbol(self.hidden[idx]) .. "<|"
+--          elseif self.solved[idx] > 0.5 then
+--             line = line .. " " .. MemoryGame.getSymbol(self.hidden[idx]) .. " |"
+--          else
+--             line = line .. "   |"
+--          end
+--          idx = idx + 1
+--       end
+--       print(line); print(fill); print(border)
+--    end
+
+--    -- Print info about last reward and total score
+--    if self.lastReward then print("Last reward: " .. self.lastReward) end
+--    print(string.format("TOTAL SCORE: %2.4f", self.score))
+--    print("")
+-- end
 
 return MemoryGame
