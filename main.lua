@@ -11,7 +11,7 @@ cmd:text("Options:")
 --------------------------------------------------------------------------------
 -- Game configuration
 cmd:option("--game", "memory", "The game to play")
-cmd:option("--width", 4, "Size of game")
+cmd:option("--width", 3, "Size of game")
 
 --------------------------------------------------------------------------------
 -- Game tracking
@@ -24,6 +24,7 @@ cmd:option("--printScores", false, "Print the scores")
 --------------------------------------------------------------------------------
 -- Learning constraints
 cmd:option("--memorySize", 0, "Size of memory")
+cmd:option("--network", "convnet", "Type of network to use")
 
 --------------------------------------------------------------------------------
 -- Learning hiper-parameters
@@ -34,8 +35,8 @@ cmd:option("--discout", 0.9, "Gama")
 
 --------------------------------------------------------------------------------
 -- Training and evalutaion
-cmd:option("--episodesNo", 100000, "Number of training episodes")
-cmd:option("--evalEvery", 2000, "Eval the learning every n games")
+cmd:option("--episodesNo", 10000, "Number of training episodes")
+cmd:option("--evalEvery", 200, "Eval the learning every n games")
 cmd:option("--evalEpisodes", 50, "Number of episodes to use for evaluation")
 
 --------------------------------------------------------------------------------
@@ -86,7 +87,6 @@ end
 -- opt.actionsNo = 5
 
 local player = Player(opt)
-print("playerul asta e ca BOICEA")
 
 --------------------------------------------------------------------------------
 -- Train and evaluate
@@ -102,8 +102,6 @@ local statesNo = torch.Tensor(evalSessionsNo)
 
 sum = 0
 
-print("lala")
-
 for s = 1, evalSessionsNo do
    -----------------------------------------------------------------------------
    -- Train
@@ -111,9 +109,6 @@ for s = 1, evalSessionsNo do
       local game = MemoryGame(opt)
       local state = game:serialize()
       local oldState, actionsAvailable, action, reward
-
-      -- print(state)
-      -- print(game)
 
       while not game:isOver() do
          if opt.display then game:display(false); sleep(opt.sleep) end
@@ -144,10 +139,8 @@ for s = 1, evalSessionsNo do
       local state = game:serialize()
       local actionsAvailable, action
 
-      -- print("n r de act", #game:getAvailableActions())
-
       while not game:isOver() do
-         if opt.display then game:display(false); sleep(opt.sleep) end
+         if opt.display then game:display(true); sleep(opt.sleep) end
 
          actionsAvailable = game:getAvailableActions()
          action = player:selectAction(state, actionsAvailable, true) -- X
