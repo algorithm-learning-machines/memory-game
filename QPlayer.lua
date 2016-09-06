@@ -10,7 +10,7 @@ function QPlayer:__init(opt)
    opt = opt or {}
    self.Q = tds.Hash({})
 
-   self.epsLearning = tonumber(opt.epsLearning) or 0.5
+   self.epsLearning = tonumber(opt.epsLearning) or 0.1
    self.epsEvaluate = tonumber(opt.epsEvaluate) or 0.1
    self.learningRate = tonumber(opt.learningRate) or 0.1
    self.discount = tonumber(opt.discount) or 0.99
@@ -49,6 +49,8 @@ function QPlayer:bestAction(state, actions)
 
                if pos2 and pos ~= pos2 and (string.sub(state,pos,pos) == ' ' 
                   or string.sub(state,pos2,pos2) == ' ') then
+                  print(getString(pos, pos2))
+                  print(self.oldStates)
                   return getString(pos, pos2), 0
                end
             end
@@ -70,17 +72,19 @@ function QPlayer:bestAction(state, actions)
          else
             if not bestQ or q > bestQ then
                bestQ = q
-               bestAction = {}
-               bestAction[1] = a
-            elseif q == bestQ then
-               bestAction[#bestAction] = a
+               bestAction = a
             end
+               -- bestAction[1] = a
+            -- elseif q == bestQ then
+            --    bestAction[#bestAction] = a
+            -- end
          end
       end
 
    if bestAction then
-      local ind = torch.random(#bestAction)
-      return bestAction[ind], bestQ
+      -- local ind = torch.random(#bestAction)
+      -- return bestAction[ind], bestQ
+      return bestAction, bestQ
    else
       return actions[torch.random(#actions)], 0
    end
