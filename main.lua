@@ -101,7 +101,6 @@ local evalScores = torch.Tensor(evalSessionsNo)
 local statesNo = torch.Tensor(evalSessionsNo)
 
 sum = 0
-
 for s = 1, evalSessionsNo do
    -----------------------------------------------------------------------------
    -- Train
